@@ -33,6 +33,26 @@ pub fn paint(ui: &egui::Ui, rect: Rect, name: &str, size: f32, tint: Color32) {
     image(name, size, tint).paint_at(ui, Rect::from_center_size(rect.center(), Vec2::splat(size)));
 }
 
+/// Find-option toggle, drawn like VS Code's find widget: the mark (`Aa`, `ab`, `.*`) on a small
+/// button, accent fill while it is on. `label` is the accessible name and the tooltip.
+pub fn text_toggle(ui: &mut egui::Ui, glyph: &str, label: &str, on: bool) -> Response {
+    let t = Tokens::get(ui.ctx());
+    let style = IconButtonStyle {
+        normal: ButtonVisuals { fill: Color32::TRANSPARENT, stroke: egui::Stroke::NONE, icon: t.text_muted },
+        hovered: ButtonVisuals { fill: t.hover, stroke: egui::Stroke::NONE, icon: t.text },
+        pressed: Some(ButtonVisuals { fill: t.pressed, stroke: egui::Stroke::NONE, icon: t.text }),
+        selected: ButtonVisuals { fill: t.accent_soft, stroke: egui::Stroke::new(1.0, t.accent), icon: t.accent_text },
+        corner_radius: egui::CornerRadius::same(4),
+        focus_stroke: egui::Stroke::new(1.0, t.accent),
+    };
+    IconButton::new(label, Vec2::new(28.0, 22.0), &style)
+        .selected(on)
+        .show(ui, |ui, rect, tint| {
+            ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, glyph, crate::theme::semibold(12.0), tint);
+        })
+        .on_hover_text(label)
+}
+
 /// Square icon button: transparent until hovered; `selected` gets the accent treatment.
 pub fn button(ui: &mut egui::Ui, name: &str, box_size: f32, selected: bool, tooltip: &str) -> Response {
     let t = Tokens::get(ui.ctx());

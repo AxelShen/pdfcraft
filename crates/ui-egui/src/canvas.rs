@@ -189,11 +189,23 @@ pub struct Find {
     pub current: Option<usize>,
     pub focus: bool,
     pub case_query: String,
-    /// Find options (Acrobat's: case-sensitive, whole words only).
+    /// Find options, as toggles on the find bar (VS Code: Match Case, Match Whole Word, Use Regular Expression).
     pub case_sensitive: bool,
     pub whole_words: bool,
+    /// `query` is a regular expression. A pattern that does not compile sets [`Self::regex_error`].
+    pub regex: bool,
+    /// One-line reason the regular expression did not compile. Matches are empty while this is set.
+    pub regex_error: Option<String>,
     /// Shown in the Search panel (Advanced Search) instead of the find bar.
     pub in_panel: bool,
+}
+
+impl Find {
+    /// Whether `case_query` should be searched. A literal ignores surrounding whitespace. A regular
+    /// expression does not: a pattern made of spaces is still a pattern.
+    pub(crate) fn query_active(&self) -> bool {
+        if self.regex { !self.case_query.is_empty() } else { !self.case_query.trim().is_empty() }
+    }
 }
 
 /// A text selection on one page.
@@ -756,6 +768,7 @@ impl DocView {
         f.case_query = f.query.clone();
         f.matches.clear();
         f.current = None;
+        f.regex_error = None;
         let pages: Vec<usize> = self.texts.keys().copied().collect();
         for p in pages {
             self.refresh_find_page(p);
@@ -764,12 +777,22 @@ impl DocView {
 
     fn refresh_find_page(&mut self, page: usize) {
         let (Some(f), Some(text)) = (self.find.as_mut(), self.texts.get(&page)) else { return };
-        if f.case_query.trim().is_empty() {
+        if !f.query_active() || f.regex_error.is_some() {
             return;
         }
+        let opts = pdfcraft_render::text::FindOptions { case_sensitive: f.case_sensitive, whole_words: f.whole_words, regex: f.regex };
+        let ranges = match text.search(&f.case_query, opts) {
+            Ok(ranges) => ranges,
+            Err(e) => {
+                f.regex_error = Some(e.to_string());
+                f.matches.clear();
+                f.current = None;
+                return;
+            }
+        };
         let current_key = f.current.and_then(|c| f.matches.get(c).cloned());
         f.matches.retain(|(p, _)| *p != page);
-        f.matches.extend(text.find_opts(&f.case_query, f.case_sensitive, f.whole_words).into_iter().map(|r| (page, r)));
+        f.matches.extend(ranges.into_iter().map(|r| (page, r)));
         f.matches.sort_by_key(|(p, r)| (*p, r.start));
         f.current = match current_key {
             Some(k) => f.matches.iter().position(|m| *m == k),
@@ -2631,7 +2654,7 @@ pub fn document_area(app: &mut PdfCraftApp, index: usize, ui: &mut egui::Ui) {
     // Text layers: visible pages for selection, every page while a search is active.
     let need_text = |p: &usize| !view.texts.contains_key(p) && !view.text_failed.contains(p);
     let mut text_pages: Vec<usize> = if hand { Vec::new() } else { visible_now.iter().copied().filter(need_text).collect() };
-    if view.find.as_ref().is_some_and(|f| !f.case_query.trim().is_empty()) {
+    if view.find.as_ref().is_some_and(|f| f.query_active()) {
         let n = info.pages.len();
         let rest: Vec<usize> = (0..n).map(|k| (cur + k) % n).filter(need_text).filter(|p| !text_pages.contains(p)).collect();
         text_pages.extend(rest);
@@ -2924,24 +2947,43 @@ fn find_bar(view: &mut DocView, pages: usize, area: Rect, ui: &mut egui::Ui, t: 
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.add(icons::image("search", 16.0, t.text_muted));
-                        let edit = egui::TextEdit::singleline(&mut find.query)
-                            .id(egui::Id::new("find-input"))
-                            .hint_text(tl!("Find text"))
-                            .desired_width(220.0)
-                            .frame(egui::Frame::NONE);
-                        let r = ui.add(edit);
-                        if find.focus {
-                            r.request_focus();
-                            find.focus = false;
-                        }
-                        if r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                            step = Some(!ui.input(|i| i.modifiers.shift));
-                            r.request_focus();
-                        }
-                        if r.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                            close = true;
-                        }
-                        let status = if find.query.trim().is_empty() {
+                        let invalid = find.regex_error.is_some();
+                        let border = if invalid { find_error_color(t.dark()) } else { t.border };
+                        egui::Frame::NONE
+                            .fill(t.field)
+                            .stroke(Stroke::new(1.0, border))
+                            .corner_radius(CornerRadius::same(6))
+                            .inner_margin(egui::Margin::symmetric(6, 2))
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.spacing_mut().item_spacing.x = 2.0;
+                                    let edit = egui::TextEdit::singleline(&mut find.query)
+                                        .id(egui::Id::new("find-input"))
+                                        .hint_text(tl!("Find text"))
+                                        .desired_width(200.0)
+                                        .frame(egui::Frame::NONE);
+                                    let mut r = ui.add(edit);
+                                    if let Some(err) = &find.regex_error {
+                                        r = r.on_hover_text(err);
+                                    }
+                                    if find.focus {
+                                        r.request_focus();
+                                        find.focus = false;
+                                    }
+                                    if r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                                        step = Some(!ui.input(|i| i.modifiers.shift));
+                                        r.request_focus();
+                                    }
+                                    if r.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                                        close = true;
+                                    }
+                                    find_toggles(ui, find);
+                                });
+                            });
+                        let blank = if find.regex { find.query.is_empty() } else { find.query.trim().is_empty() };
+                        let status = if let Some(err) = &find.regex_error {
+                            err.clone()
+                        } else if blank {
                             String::new()
                         } else if find.matches.is_empty() {
                             if searched < pages {
@@ -2960,7 +3002,8 @@ fn find_bar(view: &mut DocView, pages: usize, area: Rect, ui: &mut egui::Ui, t: 
                                 ],
                             )
                         };
-                        ui.label(egui::RichText::new(status).font(theme::regular(12.0)).color(t.text_muted));
+                        let status_color = if invalid { find_error_color(t.dark()) } else { t.text_muted };
+                        ui.label(egui::RichText::new(status).font(theme::regular(12.0)).color(status_color));
                         let tip = crate::commands::key_tip(ui.ctx(), tl!("Previous ({key})"), crate::commands::FIND_PREV);
                         if icons::button(ui, "chevron-up", 26.0, false, &tip).clicked() {
                             step = Some(false);
@@ -2969,19 +3012,11 @@ fn find_bar(view: &mut DocView, pages: usize, area: Rect, ui: &mut egui::Ui, t: 
                         if icons::button(ui, "chevron-down", 26.0, false, &tip).clicked() {
                             step = Some(true);
                         }
-                        let opts = icons::button(ui, "settings-2", 26.0, find.case_sensitive || find.whole_words, tl!("Find options"));
-                        egui::Popup::menu(&opts).show(|ui| {
-                            let a = ui.checkbox(&mut find.whole_words, tl!("Whole words only")).changed();
-                            let b = ui.checkbox(&mut find.case_sensitive, tl!("Case-sensitive")).changed();
-                            if a || b {
-                                // Search again with the new options.
-                                find.case_query.clear();
-                            }
-                        });
                         if icons::button(ui, "x", 26.0, false, tl!("Close (Esc)")).clicked() {
                             close = true;
                         }
                     });
+                    consume_find_option_keys(ui, find);
                 });
         });
     if close {
@@ -2994,6 +3029,60 @@ fn find_bar(view: &mut DocView, pages: usize, area: Rect, ui: &mut egui::Ui, t: 
     if let Some(forward) = step {
         view.find_step(forward);
     }
+}
+
+/// Match Case, Match Whole Word and Use Regular Expression, in that order, as on VS Code's find widget.
+pub(crate) fn find_toggles(ui: &mut egui::Ui, find: &mut Find) -> bool {
+    let case = icons::text_toggle(ui, "Aa", tl!("Match Case (Alt+C)"), find.case_sensitive).clicked();
+    let word = icons::text_toggle(ui, "ab", tl!("Match Whole Word (Alt+W)"), find.whole_words).clicked();
+    let regex = icons::text_toggle(ui, ".*", tl!("Use Regular Expression (Alt+R)"), find.regex).clicked();
+    if case {
+        find.case_sensitive = !find.case_sensitive;
+    }
+    if word {
+        find.whole_words = !find.whole_words;
+    }
+    if regex {
+        find.regex = !find.regex;
+    }
+    let changed = case || word || regex;
+    if changed {
+        find.case_query.clear();
+    }
+    changed
+}
+
+/// Alt+C / Alt+W / Alt+R while the find field is focused, the same keys as VS Code.
+pub(crate) fn consume_find_option_keys(ui: &egui::Ui, find: &mut Find) -> bool {
+    let focused = ui.memory(|m| {
+        let id = m.focused();
+        id == Some(egui::Id::new("find-input")) || id == Some(egui::Id::new("search-panel-input"))
+    });
+    if !focused {
+        return false;
+    }
+    let take = |key| ui.input_mut(|i| i.consume_key(egui::Modifiers::ALT, key));
+    let mut changed = false;
+    if take(egui::Key::C) {
+        find.case_sensitive = !find.case_sensitive;
+        changed = true;
+    }
+    if take(egui::Key::W) {
+        find.whole_words = !find.whole_words;
+        changed = true;
+    }
+    if take(egui::Key::R) {
+        find.regex = !find.regex;
+        changed = true;
+    }
+    if changed {
+        find.case_query.clear();
+    }
+    changed
+}
+
+fn find_error_color(dark: bool) -> Color32 {
+    if dark { Color32::from_rgb(0xF0, 0x70, 0x70) } else { Color32::from_rgb(0xC4, 0x2B, 0x2B) }
 }
 
 /// The prepare-mode field menu's choices.

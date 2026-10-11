@@ -25,22 +25,21 @@ pub(crate) fn panel(ui: &mut egui::Ui, t: &Tokens, view: &mut DocView, pages: us
         find.focus = false;
     }
     ui.horizontal(|ui| {
-        // Outlined boxes (the panel and the check-box fill are alike), as in dialogs.
-        let w = &mut ui.visuals_mut().widgets;
-        w.inactive.bg_stroke = egui::Stroke::new(1.0, t.border);
-        w.inactive.bg_fill = t.hover;
-        let a = ui.checkbox(&mut find.whole_words, tl!("Whole words only")).changed();
-        let b = ui.checkbox(&mut find.case_sensitive, tl!("Case-sensitive")).changed();
-        if a || b {
-            find.case_query.clear();
-        }
+        ui.spacing_mut().item_spacing.x = 4.0;
+        crate::canvas::find_toggles(ui, find);
     });
+    crate::canvas::consume_find_option_keys(ui, find);
     if find.query != find.case_query {
         view.rerun_find();
     }
     let Some(find) = view.find.as_ref() else { return };
+    if let Some(err) = &find.regex_error {
+        let color = if t.dark() { Color32::from_rgb(0xF0, 0x70, 0x70) } else { Color32::from_rgb(0xC4, 0x2B, 0x2B) };
+        ui.label(egui::RichText::new(err).color(color));
+    }
     ui.add_space(6.0);
-    let status = if find.query.trim().is_empty() {
+    let blank = if find.regex { find.query.is_empty() } else { find.query.trim().is_empty() };
+    let status = if blank || find.regex_error.is_some() {
         String::new()
     } else if find.matches.is_empty() && searched < pages {
         crate::i18n::fmt(tl!("Searching… {s} of {p} pages"), &[("s", &searched.to_string()), ("p", &pages.to_string())])

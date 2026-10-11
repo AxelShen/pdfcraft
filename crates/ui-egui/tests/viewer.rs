@@ -128,6 +128,26 @@ fn view_history_select_all_and_find_options() {
     h.state_mut().views[0].rerun_find();
     h.run_steps(2);
     assert_eq!(h.state().views[0].find.as_ref().unwrap().matches.len(), 5);
+    // VS Code's regex toggle: `p.ge` is the same fifteen hits; a broken pattern is reported.
+    h.run_steps(2);
+    h.get_by_label("Use Regular Expression (Alt+R)");
+    h.get_by_label("Match Case (Alt+C)");
+    h.get_by_label("Match Whole Word (Alt+W)");
+    {
+        let f = h.state_mut().views[0].find.as_mut().unwrap();
+        f.case_sensitive = false;
+        f.whole_words = false;
+        f.regex = true;
+        f.query = "p.ge".into();
+    }
+    h.state_mut().views[0].rerun_find();
+    h.run_steps(2);
+    assert_eq!(h.state().views[0].find.as_ref().unwrap().matches.len(), 15, "regex p.ge");
+    h.state_mut().views[0].find.as_mut().unwrap().query = "(".into();
+    h.state_mut().views[0].rerun_find();
+    h.run_steps(2);
+    let f = h.state().views[0].find.as_ref().unwrap();
+    assert!(f.matches.is_empty() && f.regex_error.as_deref().is_some_and(|e| e.contains("unclosed")), "{:?}", f.regex_error);
 }
 
 #[test]
