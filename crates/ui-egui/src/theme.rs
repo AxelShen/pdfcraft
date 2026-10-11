@@ -134,28 +134,42 @@ pub fn install_fonts(ctx: &egui::Context) {
     ctx.set_fonts(font_definitions());
 }
 
-/// Install the interface fonts with the CJK fallback order for the UI language (Chinese
-/// first for Simplified Chinese, Japanese first otherwise). Call it when the language
-/// changes; the new faces take effect next frame.
-pub fn install_fonts_for(ctx: &egui::Context, prefer_hans: bool) {
-    ctx.set_fonts(installed_font_definitions(prefer_hans));
+/// Install the interface fonts with the CJK fallback order for the UI language.
+/// Call it when the language changes; the new faces take effect next frame.
+pub fn install_fonts_for(ctx: &egui::Context, order: crate::system_fonts::CjkOrder) {
+    ctx.set_fonts(installed_font_definitions(order));
 }
 
-/// The name of the installed face [`installed_font_definitions`] may add after the embedded ones.
-pub const SYSTEM_FALLBACK: &str = "system-fallback";
+pub use crate::system_fonts::CjkOrder;
 
-/// What [`install_fonts_for`] installs: [`font_definitions_for`], then, on desktop, one face
-/// already installed on this machine as the last fallback of every family. It only draws
-/// characters no embedded face has (an Arabic file name in a build without craft-fonts);
-/// `PDFCRAFT_SYSTEM_FONTS=0` leaves it out.
-pub fn installed_font_definitions(prefer_hans: bool) -> FontDefinitions {
+/// The name of the installed broad face [`installed_font_definitions`] may add after the embedded ones.
+pub const SYSTEM_FALLBACK: &str = "system-fallback";
+/// The name of the installed CJK face, ahead of [`SYSTEM_FALLBACK`] so Chinese and Japanese
+/// are drawn by it instead of by a Latin face's missing-glyph box.
+pub const SYSTEM_CJK: &str = "system-cjk";
+
+/// What [`install_fonts_for`] installs: [`font_definitions_for`], then, on desktop, a CJK face
+/// and a broad face already installed on this machine. They only draw characters no embedded
+/// face has (Chinese UI text, or an Arabic file name, in a build without craft-fonts).
+/// `PDFCRAFT_SYSTEM_FONTS=0` leaves them out.
+pub fn installed_font_definitions(order: crate::system_fonts::CjkOrder) -> FontDefinitions {
     #[cfg_attr(target_arch = "wasm32", expect(unused_mut))]
-    let mut fonts = font_definitions_for(prefer_hans);
+    let mut fonts = font_definitions_for(order == crate::system_fonts::CjkOrder::Hans);
     #[cfg(not(target_arch = "wasm32"))]
-    if let Some(data) = crate::system_fonts::fallback() {
-        fonts.font_data.insert(SYSTEM_FALLBACK.to_owned(), data);
-        for stack in fonts.families.values_mut() {
-            stack.push(SYSTEM_FALLBACK.to_owned());
+    {
+        let add = |fonts: &mut FontDefinitions, name: &str, data: std::sync::Arc<egui::FontData>| {
+            fonts.font_data.insert(name.to_owned(), data);
+            for stack in fonts.families.values_mut() {
+                stack.push(name.to_owned());
+            }
+        };
+        // CJK before the broad face: Segoe UI has Arabic but no Chinese, so it must not be
+        // the only fallback or every Traditional Chinese label draws as a box.
+        if let Some(data) = crate::system_fonts::cjk(order) {
+            add(&mut fonts, SYSTEM_CJK, data);
+        }
+        if let Some(data) = crate::system_fonts::fallback() {
+            add(&mut fonts, SYSTEM_FALLBACK, data);
         }
     }
     fonts

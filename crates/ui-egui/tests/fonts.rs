@@ -129,7 +129,7 @@ fn telugu_ui_text_uses_craft_fonts() {
 #[test]
 fn system_fallback_fills_missing_scripts() {
     assert!(!theme::font_definitions().font_data.contains_key(theme::SYSTEM_FALLBACK));
-    let defs = theme::installed_font_definitions(false);
+    let defs = theme::installed_font_definitions(theme::CjkOrder::Japanese);
     if !defs.font_data.contains_key(theme::SYSTEM_FALLBACK) {
         eprintln!("skipping system_fallback_fills_missing_scripts: no installed fallback font (or PDFCRAFT_SYSTEM_FONTS=0)");
         assert!(defs.families.values().all(|stack| !stack.iter().any(|n| n == theme::SYSTEM_FALLBACK)));
@@ -145,6 +145,31 @@ fn system_fallback_fills_missing_scripts() {
         assert!(fonts.has_glyphs(&id, "PdfCraft"), "{id:?}");
     }
     assert!(layout_widths(&mut fonts, ARABIC).iter().all(|w| w.is_finite() && *w > 0.0));
+}
+
+/// A build without craft-fonts still draws Chinese and Japanese from an installed CJK face.
+/// Traditional Chinese is the case that used to come out as boxes: the only installed
+/// fallback was Segoe UI, which has Arabic and no CJK.
+#[test]
+fn system_cjk_draws_chinese_and_japanese() {
+    let defs = theme::installed_font_definitions(theme::CjkOrder::Hant);
+    if !defs.font_data.contains_key(theme::SYSTEM_CJK) {
+        eprintln!("skipping system_cjk_draws_chinese_and_japanese: no installed CJK font (or PDFCRAFT_SYSTEM_FONTS=0)");
+        return;
+    }
+    for (family, stack) in &defs.families {
+        let cjk = stack.iter().position(|n| n == theme::SYSTEM_CJK).expect("cjk fallback");
+        if let Some(broad) = stack.iter().position(|n| n == theme::SYSTEM_FALLBACK) {
+            assert!(cjk < broad, "{family:?}: CJK face must precede the broad face: {stack:?}");
+        }
+    }
+    let mut fonts = Fonts::new(TextOptions::default(), defs);
+    for text in ["繁體中文", CHINESE, JAPANESE] {
+        for id in families() {
+            assert!(fonts.has_glyphs(&id, text), "{id:?} lacks {text}");
+        }
+        assert!(layout_widths(&mut fonts, text).iter().all(|w| w.is_finite() && *w > 0.0), "{text}");
+    }
 }
 
 /// Without craft-fonts the interface fonts still install and lay out any text (Japanese falls
