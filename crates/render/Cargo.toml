@@ -15,6 +15,7 @@ hayro = { workspace = true }
 hayro-syntax = { workspace = true }
 lopdf = { workspace = true }
 kurbo = { workspace = true }
+regex = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
 # Reads rendered pixel words as bytes; already in the tree through hayro.

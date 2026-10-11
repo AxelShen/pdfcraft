@@ -55,6 +55,8 @@ weezl = "0.2"
 
 # foundation
 thiserror = "2"
+# VS Code-style regular-expression find. Linear-time (RE2); no backreferences or look-around.
+regex = "1.11"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 log = "0.4"

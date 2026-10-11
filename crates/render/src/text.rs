@@ -30,6 +30,22 @@ pub struct TextGlyph {
     pub direction: [f32; 2],
 }
 
+/// Options for [`PageText::search`]. `regex` is VS Code's "Use Regular Expression" toggle.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FindOptions {
+    pub case_sensitive: bool,
+    pub whole_words: bool,
+    pub regex: bool,
+}
+
+/// A regular expression the find bar could not compile. The message is one line, for the bar.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("{0}")]
+pub struct FindPatternError(pub String);
+
+/// How long a find pattern may be. Longer input is rejected instead of handed to the compiler.
+const MAX_REGEX_CHARS: usize = 4_096;
+
 /// `s` folded for case-insensitive search, one character for one character.
 ///
 /// The dotted and dotless i of Turkish and Azerbaijani (`İ` U+0130, `ı` U+0131) and the Latin
@@ -46,6 +62,68 @@ fn fold_case(s: &str) -> String {
         }
     }
     out
+}
+
+/// Compile `pattern` the way VS Code's find widget does.
+///
+/// Case and whole-word are toggles, not part of the pattern. Whole word wraps with `\b` only
+/// when that end of the pattern is an ASCII word character (`[A-Za-z0-9_]`), which is what
+/// `/\B/.test(firstChar)` decides in VS Code. `(?m)` makes `^` and `$` per-line; `.` does not
+/// match a newline unless the pattern asks (`(?s)`).
+fn compile_vscode_regex(pattern: &str, case_sensitive: bool, whole_words: bool) -> Result<regex::Regex, FindPatternError> {
+    if pattern.chars().count() > MAX_REGEX_CHARS {
+        return Err(FindPatternError("regular expression is too long".into()));
+    }
+    let body = if whole_words { wrap_whole_word(pattern) } else { pattern.to_owned() };
+    let flags = if case_sensitive { "(?m)" } else { "(?mi)" };
+    regex::Regex::new(&format!("{flags}{body}")).map_err(|e| FindPatternError(regex_error_line(&e)))
+}
+
+/// ASCII word character, matching VS Code's decision to add a `\b` at one end of a pattern.
+fn is_regex_word_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '_'
+}
+
+fn wrap_whole_word(pattern: &str) -> String {
+    let mut out = String::new();
+    if pattern.chars().next().is_some_and(is_regex_word_char) {
+        out.push_str(r"\b");
+    }
+    out.push_str(pattern);
+    if pattern.chars().next_back().is_some_and(is_regex_word_char) {
+        out.push_str(r"\b");
+    }
+    out
+}
+
+fn regex_error_line(err: &regex::Error) -> String {
+    for line in err.to_string().lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("error:") {
+            let rest = rest.trim();
+            if !rest.is_empty() {
+                return rest.to_string();
+            }
+        }
+    }
+    "invalid regular expression".to_string()
+}
+
+fn push_sep(s: &mut String, owner: &mut Vec<Option<usize>>, c: char) {
+    s.push(c);
+    for _ in 0..c.len_utf8() {
+        owner.push(None);
+    }
+}
+
+/// Glyph range covered by haystack bytes `[start, end)`. Separators (no glyph) are ignored, so
+/// a match of only a newline or an inserted space highlights nothing.
+fn glyph_span(owner: &[Option<usize>], start: usize, end: usize) -> Option<std::ops::Range<usize>> {
+    let slice = owner.get(start..end)?;
+    let mut glyphs = slice.iter().flatten().copied();
+    let first = glyphs.next()?;
+    let last = glyphs.last().unwrap_or(first);
+    Some(first..last.saturating_add(1))
 }
 
 /// The text of one page, in content order, with line structure.
@@ -94,6 +172,23 @@ impl PageText {
 
     /// Search with Acrobat's find options: case-sensitive, whole words only.
     pub fn find_opts(&self, needle: &str, case_sensitive: bool, whole_words: bool) -> Vec<std::ops::Range<usize>> {
+        self.find_literal(needle, case_sensitive, whole_words)
+    }
+
+    /// Literal search, or a VS Code-style regular expression when [`FindOptions::regex`] is set.
+    ///
+    /// The pattern is a regex, Match Case and Match Whole Word stay separate from it, `^` and `$`
+    /// match each line, and `.` does not cross a line break. A pattern that does not compile is
+    /// [`FindPatternError`] and matches nothing. Literal search is unchanged.
+    pub fn search(&self, needle: &str, opts: FindOptions) -> Result<Vec<std::ops::Range<usize>>, FindPatternError> {
+        if opts.regex {
+            self.find_regex(needle, opts.case_sensitive, opts.whole_words)
+        } else {
+            Ok(self.find_literal(needle, opts.case_sensitive, opts.whole_words))
+        }
+    }
+
+    fn find_literal(&self, needle: &str, case_sensitive: bool, whole_words: bool) -> Vec<std::ops::Range<usize>> {
         let fold = |s: &str| if case_sensitive { s.to_string() } else { fold_case(s) };
         let needle: Vec<char> = fold(needle).split_whitespace().collect::<Vec<_>>().join(" ").chars().collect();
         if needle.is_empty() {
@@ -129,6 +224,54 @@ impl PageText {
             }
         }
         out
+    }
+
+    /// Regular-expression search over the page text as [`Self::plain_text`] reconstructs it
+    /// (a space at each word gap, a newline between lines). A match that is only a separator
+    /// highlights nothing. Zero-width matches are skipped.
+    fn find_regex(&self, pattern: &str, case_sensitive: bool, whole_words: bool) -> Result<Vec<std::ops::Range<usize>>, FindPatternError> {
+        if pattern.is_empty() {
+            return Ok(Vec::new());
+        }
+        let re = compile_vscode_regex(pattern, case_sensitive, whole_words)?;
+        let (hay, owner) = self.regex_haystack();
+        let mut out = Vec::new();
+        for m in re.find_iter(&hay) {
+            if m.start() == m.end() {
+                continue;
+            }
+            let Some(range) = glyph_span(&owner, m.start(), m.end()) else { continue };
+            if out.last() != Some(&range) {
+                out.push(range);
+            }
+        }
+        Ok(out)
+    }
+
+    /// Page text with one owner entry per haystack byte. Separator bytes (the space or newline
+    /// inserted between glyphs) own no glyph, so a match of only those bytes is not a highlight.
+    fn regex_haystack(&self) -> (String, Vec<Option<usize>>) {
+        let mut s = String::new();
+        let mut owner = Vec::new();
+        let mut prev_line = None;
+        for (i, g) in self.glyphs.iter().enumerate() {
+            if i > 0 {
+                let line = self.line_of.get(i).copied();
+                if prev_line != line {
+                    push_sep(&mut s, &mut owner, '\n');
+                } else if self.space_before.get(i).copied().unwrap_or(false) {
+                    push_sep(&mut s, &mut owner, ' ');
+                }
+            }
+            for c in g.text.chars() {
+                s.push(c);
+                for _ in 0..c.len_utf8() {
+                    owner.push(Some(i));
+                }
+            }
+            prev_line = self.line_of.get(i).copied();
+        }
+        (s, owner)
     }
 
     /// Glyph ranges of the matches a character matcher finds in the page text (words and lines
@@ -1086,6 +1229,38 @@ mod tests {
         assert_eq!(t.find("o"), vec![4..5, 6..7]);
         assert_eq!(t.line_rects(3..12).len(), 2);
         assert_eq!(t.nearest(52.0, 14.0), Some(5));
+    }
+
+    #[test]
+    fn regex_search_follows_vscode_find_rules() {
+        // "Hello world" / "Next", the same page as lines_words_and_search.
+        let mut v = Vec::new();
+        word(&mut v, "Hello", 10.0, 10.0, 6.0);
+        word(&mut v, "world", 50.0, 10.0, 6.0);
+        word(&mut v, "Next", 10.0, 30.0, 6.0);
+        let t = layout(v);
+        assert_eq!(t.plain_text(), "Hello world\nNext");
+        let re = |q: &str, case_sensitive: bool, whole_words: bool| t.search(q, FindOptions { case_sensitive, whole_words, regex: true }).unwrap();
+        assert_eq!(re("wo.ld", false, false), vec![5..10]);
+        assert_eq!(re("Hel+o", false, false), vec![0..5]);
+        assert!(re("H.*t", false, false).is_empty(), ". does not cross the line break");
+        assert_eq!(re(r"world\nNext", false, false), vec![5..14]);
+        assert_eq!(re("^Next", false, false), vec![10..14]);
+        assert_eq!(re("WORLD", false, false), vec![5..10], "case follows the Match Case toggle");
+        assert!(re("WORLD", true, false).is_empty());
+        assert_eq!(re("world", false, true), vec![5..10]);
+        assert!(re("orl", false, true).is_empty(), "a word-character pattern is wrapped in \\b");
+        assert_eq!(re("orl", false, false), vec![6..9]);
+        // Ends on a non-word character, so VS Code adds no trailing \\b.
+        assert_eq!(re(r"worl.", false, true), vec![5..10]);
+        assert!(t.search("", FindOptions { case_sensitive: false, whole_words: false, regex: true }).unwrap().is_empty());
+        let err = t.search("(", FindOptions { case_sensitive: false, whole_words: false, regex: true }).unwrap_err();
+        assert!(err.to_string().contains("unclosed group"), "{err}");
+        let long = "a".repeat(super::MAX_REGEX_CHARS + 1);
+        let err = t.search(&long, FindOptions { case_sensitive: false, whole_words: false, regex: true }).unwrap_err();
+        assert_eq!(err.to_string(), "regular expression is too long");
+        // Literal search is a different path: it still folds case and crosses the line break.
+        assert_eq!(t.find("WORLD next"), vec![5..14]);
     }
 
     #[test]
