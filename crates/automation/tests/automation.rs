@@ -125,6 +125,19 @@ fn open_inspect_render_and_find() {
 }
 
 #[test]
+fn text_find_regex_case_and_whole_word() {
+    let dir = workdir("find-regex");
+    let mut a = auto(&dir);
+    let doc = ok(&mut a, "doc_open", json!({ "path": "a.pdf" }))["doc"].as_u64().unwrap();
+    // Each page reads "Page N".
+    assert_eq!(ok(&mut a, "text_find", json!({ "doc": doc, "query": "^Page", "regex": true }))["count"], 3);
+    assert_eq!(ok(&mut a, "text_find", json!({ "doc": doc, "query": "page", "case_sensitive": true }))["count"], 0);
+    assert_eq!(ok(&mut a, "text_find", json!({ "doc": doc, "query": "age", "whole_words": true }))["count"], 0);
+    let err = a.call("text_find", &json!({ "doc": doc, "query": "(", "regex": true })).unwrap_err();
+    assert!(err.to_string().contains("unclosed"), "{err}");
+}
+
+#[test]
 fn edit_undo_redo_and_save_round_trip() {
     let dir = workdir("edit");
     let mut a = auto(&dir);

@@ -1375,15 +1375,15 @@ notes = ""
 
 [[feature]]
 id = "view.find-options"
-title = "Find options: whole words, case-sensitive"
+title = "Find options: whole words, case-sensitive, regular expression"
 area = "B"
 tier = "P1"
 milestone = "M3"
 status = "shipped"
 commands = ["edit.find"]
-tools = []
-evidence = ["crates/ui-egui/tests/viewer.rs::view_history_select_all_and_find_options"]
-notes = "whole words only, case-sensitive"
+tools = ["text_find"]
+evidence = ["crates/ui-egui/tests/viewer.rs::view_history_select_all_and_find_options", "crates/render/src/text.rs::regex_search_follows_vscode_find_rules", "crates/automation/tests/automation.rs::text_find_regex_case_and_whole_word"]
+notes = "Match Case, Match Whole Word and Use Regular Expression sit on the find bar and the Search panel (Alt+C, Alt+W, Alt+R), the same toggles as VS Code. A regular expression is case-controlled by Match Case, wrapped in \\b for whole words only when that end of the pattern is an ASCII word character, ^ and $ match per line, and . does not cross a line break. A pattern that does not compile is shown and not searched. Rust regex syntax: no backreferences or look-around."
 
 [[feature]]
 id = "view.find-in-comments-bookmarks"

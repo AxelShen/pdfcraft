@@ -168,10 +168,17 @@ pub fn tools() -> Vec<ToolDef> {
                 }),
                 &["doc"],
             )),
-        t("text_find", "Find text", "Find a phrase (case-insensitive, whitespace-normalised) and return each match with its page and line rectangles in points (origin top-left).")
+        t("text_find", "Find text", "Find a phrase and return each match with its page and line rectangles in points (origin top-left). Case-insensitive and whitespace-normalised unless case_sensitive, whole_words or regex is set. regex uses the find bar's rules: a regular expression, case and whole-word as separate options, ^ and $ per line. An invalid pattern is an error.")
             .ro()
             .cmd("edit.find")
-            .with(schema(json!({ "doc": doc(), "query": { "type": "string", "minLength": 1 }, "limit": { "type": "integer", "minimum": 1, "description": "Maximum matches (default 500)." } }), &["doc", "query"])),
+            .with(schema(json!({
+                "doc": doc(),
+                "query": { "type": "string", "minLength": 1 },
+                "limit": { "type": "integer", "minimum": 1, "description": "Maximum matches (default 500)." },
+                "case_sensitive": { "type": "boolean" },
+                "whole_words": { "type": "boolean" },
+                "regex": { "type": "boolean", "description": "Interpret query as a regular expression, with the find bar's rules." }
+            }), &["doc", "query"])),
         t("page_rotate", "Rotate pages", "Rotate pages by a multiple of 90 degrees (positive is clockwise): the listed pages (default all), filtered like Acrobat's Rotate Pages by subset (all, even, odd page numbers) and orientation (all, landscape, portrait). Undoable.")
             .cmd("page.rotate")
             .with(schema(

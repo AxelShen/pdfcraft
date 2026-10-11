@@ -1538,10 +1538,20 @@ impl Automation {
         let (id, n) = (doc.id, doc.info.pages.len());
         let query = a.str("query")?;
         let limit = a.opt_int("limit")?.unwrap_or(500).max(1) as usize;
+        let opts = pdfcraft_render::text::FindOptions {
+            case_sensitive: a.opt_bool("case_sensitive")?.unwrap_or(false),
+            whole_words: a.opt_bool("whole_words")?.unwrap_or(false),
+            regex: a.opt_bool("regex")?.unwrap_or(false),
+        };
         let texts = self.page_texts(id, &(0..n).collect::<Vec<_>>())?;
+        // Compile before reporting matches. An empty document still has to reject a broken pattern.
+        if texts.is_empty() {
+            PageText::default().search(query, opts).map_err(failed)?;
+        }
         let mut matches = Vec::new();
         'pages: for (p, text) in texts.iter().enumerate() {
-            for r in text.find(query) {
+            let found = text.search(query, opts).map_err(failed)?;
+            for r in found {
                 if matches.len() == limit {
                     break 'pages;
                 }
