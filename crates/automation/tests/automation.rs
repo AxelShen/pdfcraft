@@ -138,6 +138,37 @@ fn text_find_regex_case_and_whole_word() {
 }
 
 #[test]
+fn folder_find_searches_pdfs_under_a_folder() {
+    let dir = workdir("folder-find");
+    std::fs::create_dir(dir.join("sub")).unwrap();
+    std::fs::write(dir.join("sub").join("nested.pdf"), fixture(1)).unwrap();
+    std::fs::write(dir.join("notes.txt"), b"Page should not count").unwrap();
+    std::fs::write(dir.join("bad.pdf"), b"not a pdf").unwrap();
+    let mut a = auto(&dir);
+    let found = ok(&mut a, "folder_find", json!({ "folder": ".", "query": "Page" }));
+    // a.pdf has 3 pages, b.pdf 2, nested.pdf 1. The text file is not a PDF.
+    assert_eq!(found["count"], 6, "{found}");
+    let hits = found["hits"].as_array().unwrap();
+    let paths: Vec<&str> = hits.iter().map(|h| h["path"].as_str().unwrap()).collect();
+    assert!(paths.iter().all(|p| p.to_ascii_lowercase().ends_with(".pdf")), "{paths:?}");
+    assert!(paths.iter().any(|p| p.replace('\\', "/").ends_with("sub/nested.pdf")), "{paths:?}");
+    assert!(hits.iter().any(|h| h["path"].as_str().unwrap().ends_with("a.pdf") && h["page"].as_u64() == Some(2)));
+    assert!(found["skipped"].as_u64().unwrap() >= 1, "bad.pdf is skipped: {found}");
+
+    let top = ok(&mut a, "folder_find", json!({ "folder": ".", "query": "Page", "subfolders": false }));
+    assert_eq!(top["count"], 5, "{top}");
+    let top_paths: Vec<&str> = top["hits"].as_array().unwrap().iter().map(|h| h["path"].as_str().unwrap()).collect();
+    assert!(top_paths.iter().all(|p| !p.replace('\\', "/").contains("sub/")), "{top_paths:?}");
+
+    assert_eq!(ok(&mut a, "folder_find", json!({ "folder": ".", "query": "age", "whole_words": true }))["count"], 0);
+    assert_eq!(ok(&mut a, "folder_find", json!({ "folder": ".", "query": "page", "case_sensitive": true }))["count"], 0);
+    let err = a.call("folder_find", &json!({ "folder": ".", "query": "(", "regex": true })).unwrap_err();
+    assert!(err.to_string().contains("unclosed"), "{err}");
+    let outside = a.call("folder_find", &json!({ "folder": "..", "query": "Page" })).unwrap_err();
+    assert!(outside.to_string().contains("outside"), "{outside}");
+}
+
+#[test]
 fn edit_undo_redo_and_save_round_trip() {
     let dir = workdir("edit");
     let mut a = auto(&dir);

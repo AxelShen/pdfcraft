@@ -2160,3 +2160,20 @@ key	Space	空格
 	Resize panel window	调整面板窗口大小
 	Tools	工具
 	Inspector	检查器
+	In the current document	当前文档
+	All PDF files in a folder	文件夹中的所有 PDF
+	Search for words in the PDF files in this folder	在此文件夹的 PDF 中搜索词语
+	Search this folder	搜索此文件夹
+	Include subfolders	包含子文件夹
+	Searching… {s} of {t} files	正在搜索… 第 {s} 个，共 {t} 个文件
+	{n} results in {f} files	{f} 个文件中有 {n} 个结果
+	{k} files could not be read.	有 {k} 个文件无法读取。
+	Showing the first {n} results.	只显示前 {n} 个结果。
+	Enter a word or phrase to search for.	请输入要搜索的词语。
+	Folder search is not available in this build.	此版本无法搜索文件夹。
+	Choose a folder to search	选择要搜索的文件夹
+	{path} is not a folder	{path} 不是文件夹
+	Folder	文件夹
+	Match Case (Alt+C)	区分大小写 (Alt+C)
+	Match Whole Word (Alt+W)	全字匹配 (Alt+W)
+	Use Regular Expression (Alt+R)	使用正则表达式 (Alt+R)

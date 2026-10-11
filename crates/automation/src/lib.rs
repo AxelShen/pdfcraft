@@ -163,6 +163,7 @@ impl Automation {
             "comment_image_preview" => return self.comment_image_preview(&a),
             "text_extract" => self.text_extract(&a)?,
             "text_find" => self.text_find(&a)?,
+            "folder_find" => self.folder_find(&a)?,
             "page_rotate" => {
                 let degrees = a.int("degrees")?;
                 if degrees % 90 != 0 {
@@ -1559,6 +1560,44 @@ impl Automation {
             }
         }
         Ok(json!({ "query": query, "count": matches.len(), "matches": matches }))
+    }
+
+    fn folder_find(&self, a: &Args) -> Result<Value> {
+        let folder = self.resolve(a.str("folder")?, false)?;
+        let text = a.str("query")?;
+        let limit = usize::try_from(a.opt_int("limit")?.unwrap_or(500).max(1)).unwrap_or(usize::MAX);
+        let query = pdfcraft_engine::folder_find::Query {
+            text: text.to_string(),
+            subfolders: a.opt_bool("subfolders")?.unwrap_or(true),
+            options: pdfcraft_render::text::FindOptions {
+                case_sensitive: a.opt_bool("case_sensitive")?.unwrap_or(false),
+                whole_words: a.opt_bool("whole_words")?.unwrap_or(false),
+                regex: a.opt_bool("regex")?.unwrap_or(false),
+            },
+            limit,
+        };
+        let report = pdfcraft_engine::folder_find::search(&folder, &query, |_, _| true).map_err(failed)?;
+        let hits: Vec<Value> = report
+            .hits
+            .iter()
+            .filter(|hit| self.inside_root(&hit.path))
+            .map(|hit| json!({ "path": hit.path.display().to_string(), "page": hit.page, "snippet": hit.snippet }))
+            .collect();
+        Ok(json!({
+            "query": text,
+            "count": hits.len(),
+            "files": report.files,
+            "skipped": report.skipped,
+            "truncated": report.truncated,
+            "cancelled": report.cancelled,
+            "hits": hits,
+        }))
+    }
+
+    /// A hit stays only when its real path is inside the confinement root.
+    fn inside_root(&self, path: &Path) -> bool {
+        let Some(root) = &self.root else { return true };
+        path.canonicalize().is_ok_and(|real| real.starts_with(root))
     }
 
     fn command_list(&self, a: &Args) -> Result<Value> {

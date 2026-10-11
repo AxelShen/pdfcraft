@@ -2082,3 +2082,20 @@ key	Space	空格
 	Resize panel window	調整面板視窗大小
 	Tools	工具
 	Inspector	檢查器
+	In the current document	目前的文件
+	All PDF files in a folder	資料夾中的所有 PDF
+	Search for words in the PDF files in this folder	在這個資料夾的 PDF 裡搜尋字詞
+	Search this folder	搜尋這個資料夾
+	Include subfolders	包含子資料夾
+	Searching… {s} of {t} files	搜尋中… 第 {s} 個，共 {t} 個檔案
+	{n} results in {f} files	{f} 個檔案中有 {n} 個結果
+	{k} files could not be read.	有 {k} 個檔案無法讀取。
+	Showing the first {n} results.	只顯示前 {n} 個結果。
+	Enter a word or phrase to search for.	請輸入要搜尋的字詞。
+	Folder search is not available in this build.	這個版本無法搜尋資料夾。
+	Choose a folder to search	選擇要搜尋的資料夾
+	{path} is not a folder	{path} 不是資料夾
+	Folder	資料夾
+	Match Case (Alt+C)	區分大小寫 (Alt+C)
+	Match Whole Word (Alt+W)	全字拼字須相符 (Alt+W)
+	Use Regular Expression (Alt+R)	使用規則運算式 (Alt+R)

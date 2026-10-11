@@ -18,6 +18,7 @@ pub mod commands;
 pub mod compare;
 pub mod dates;
 pub mod export;
+pub mod folder_find;
 pub mod js;
 pub mod links;
 pub mod ocr;

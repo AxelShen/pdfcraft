@@ -1417,9 +1417,9 @@ tier = "P1"
 milestone = "M12"
 status = "partial"
 commands = ["edit.advanced_search"]
-tools = ["text_find"]
-evidence = ["crates/ui-egui/tests/viewer.rs::advanced_search_lists_results_with_context"]
-notes = "in the current document, as a side panel; searching other open documents, folders and indexes is still to come"
+tools = ["folder_find"]
+evidence = ["crates/ui-egui/tests/viewer.rs::advanced_search_lists_results_with_context", "crates/ui-egui/tests/viewer.rs::folder_search_opens_a_hit_in_a_subfolder"]
+notes = "Side panel for the current document or every PDF in a folder (view.search-folder). Searching other open documents, bookmarks, comments and indexes is still to come."
 
 [[feature]]
 id = "view.search-folder"
@@ -1427,11 +1427,11 @@ title = "Search all PDFs in a folder"
 area = "B"
 tier = "P1"
 milestone = "M12"
-status = "planned"
-commands = []
-tools = []
-evidence = []
-notes = ""
+status = "shipped"
+commands = ["edit.advanced_search"]
+tools = ["folder_find"]
+evidence = ["crates/engine/src/folder_find.rs::finds_pdfs_in_a_folder_and_its_subfolders", "crates/automation/tests/automation.rs::folder_find_searches_pdfs_under_a_folder", "crates/ui-egui/tests/viewer.rs::folder_search_opens_a_hit_in_a_subfolder"]
+notes = "Ctrl+Shift+F opens Search on all PDF files in a folder, including subfolders unless that is turned off. Case, whole word and regular expression follow Find. A result opens that PDF on the matching page and keeps unsaved edits in a tab that already shows the file. Unreadable, encrypted, oversized and symlinked files are skipped. Other open documents, bookmarks, comments and catalog indexes are still to come."
 
 [[feature]]
 id = "view.search-boolean"

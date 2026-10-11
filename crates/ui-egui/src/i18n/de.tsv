@@ -2196,3 +2196,20 @@ key	Space	Leertaste
 	Resize panel window	Größe des Bereichsfensters ändern
 	Tools	Werkzeuge
 	Inspector	Inspektor
+	In the current document	Im aktuellen Dokument
+	All PDF files in a folder	Alle PDF-Dateien in einem Ordner
+	Search for words in the PDF files in this folder	Wörter in den PDF-Dateien dieses Ordners suchen
+	Search this folder	Diesen Ordner durchsuchen
+	Include subfolders	Unterordner einschließen
+	Searching… {s} of {t} files	Suche… {s} von {t} Dateien
+	{n} results in {f} files	{n} Ergebnisse in {f} Dateien
+	{k} files could not be read.	{k} Dateien konnten nicht gelesen werden.
+	Showing the first {n} results.	Die ersten {n} Ergebnisse werden angezeigt.
+	Enter a word or phrase to search for.	Geben Sie ein Wort oder einen Ausdruck ein.
+	Folder search is not available in this build.	Die Ordnersuche ist in dieser Version nicht verfügbar.
+	Choose a folder to search	Zu durchsuchenden Ordner wählen
+	{path} is not a folder	{path} ist kein Ordner
+	Folder	Ordner
+	Match Case (Alt+C)	Groß-/Kleinschreibung (Alt+C)
+	Match Whole Word (Alt+W)	Ganzes Wort (Alt+W)
+	Use Regular Expression (Alt+R)	Regulären Ausdruck verwenden (Alt+R)

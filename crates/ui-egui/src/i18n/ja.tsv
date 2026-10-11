@@ -2196,3 +2196,20 @@ key	Space	スペース
 	Resize panel window	パネルウィンドウのサイズを変更
 	Tools	ツール
 	Inspector	インスペクター
+	In the current document	現在の文書内
+	All PDF files in a folder	フォルダー内のすべての PDF
+	Search for words in the PDF files in this folder	このフォルダーの PDF から語句を検索
+	Search this folder	このフォルダーを検索
+	Include subfolders	サブフォルダーを含める
+	Searching… {s} of {t} files	検索中… {t} ファイル中 {s} ファイル
+	{n} results in {f} files	{f} ファイルに {n} 件
+	{k} files could not be read.	{k} ファイルを読み取れませんでした。
+	Showing the first {n} results.	最初の {n} 件を表示しています。
+	Enter a word or phrase to search for.	検索する単語または語句を入力してください。
+	Folder search is not available in this build.	このビルドではフォルダー検索を利用できません。
+	Choose a folder to search	検索するフォルダーを選択
+	{path} is not a folder	{path} はフォルダーではありません
+	Folder	フォルダー
+	Match Case (Alt+C)	大文字と小文字を区別 (Alt+C)
+	Match Whole Word (Alt+W)	単語単位で一致 (Alt+W)
+	Use Regular Expression (Alt+R)	正規表現を使う (Alt+R)

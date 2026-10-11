@@ -2109,3 +2109,20 @@ key	Space	Пробел
 	Resize panel window	Изменить размер окна панели
 	Tools	Инструменты
 	Inspector	Инспектор
+	In the current document	В текущем документе
+	All PDF files in a folder	Все файлы PDF в папке
+	Search for words in the PDF files in this folder	Искать слова в PDF-файлах этой папки
+	Search this folder	Искать в этой папке
+	Include subfolders	Включая вложенные папки
+	Searching… {s} of {t} files	Поиск… {s} из {t} файлов
+	{n} results in {f} files	{n} результатов в {f} файлах
+	{k} files could not be read.	Не удалось прочитать файлов: {k}.
+	Showing the first {n} results.	Показаны первые {n} результатов.
+	Enter a word or phrase to search for.	Введите слово или фразу для поиска.
+	Folder search is not available in this build.	Поиск по папке недоступен в этой сборке.
+	Choose a folder to search	Выберите папку для поиска
+	{path} is not a folder	{path} не является папкой
+	Folder	Папка
+	Match Case (Alt+C)	С учётом регистра (Alt+C)
+	Match Whole Word (Alt+W)	Слово целиком (Alt+W)
+	Use Regular Expression (Alt+R)	Регулярное выражение (Alt+R)

@@ -2197,3 +2197,20 @@ key	Space	Espaço
 	Resize panel window	Redimensionar janela do painel
 	Tools	Ferramentas
 	Inspector	Inspetor
+	In the current document	No documento atual
+	All PDF files in a folder	Todos os arquivos PDF de uma pasta
+	Search for words in the PDF files in this folder	Procurar palavras nos PDFs desta pasta
+	Search this folder	Pesquisar nesta pasta
+	Include subfolders	Incluir subpastas
+	Searching… {s} of {t} files	Pesquisando… {s} de {t} arquivos
+	{n} results in {f} files	{n} resultados em {f} arquivos
+	{k} files could not be read.	Não foi possível ler {k} arquivos.
+	Showing the first {n} results.	Mostrando os primeiros {n} resultados.
+	Enter a word or phrase to search for.	Digite uma palavra ou frase para pesquisar.
+	Folder search is not available in this build.	A pesquisa em pastas não está disponível nesta versão.
+	Choose a folder to search	Escolher uma pasta para pesquisar
+	{path} is not a folder	{path} não é uma pasta
+	Folder	Pasta
+	Match Case (Alt+C)	Diferenciar maiúsculas (Alt+C)
+	Match Whole Word (Alt+W)	Palavra inteira (Alt+W)
+	Use Regular Expression (Alt+R)	Usar expressão regular (Alt+R)

@@ -2158,3 +2158,20 @@ key	Space	Интервал
 	Resize panel window	Преоразмери прозореца на панела
 	Tools	Инструменти
 	Inspector	Инспектор
+	In the current document	В текущия документ
+	All PDF files in a folder	Всички PDF файлове в папка
+	Search for words in the PDF files in this folder	Търсене на думи в PDF файловете на тази папка
+	Search this folder	Търсене в тази папка
+	Include subfolders	Включително подпапките
+	Searching… {s} of {t} files	Търсене… {s} от {t} файла
+	{n} results in {f} files	{n} резултата в {f} файла
+	{k} files could not be read.	{k} файла не можаха да бъдат прочетени.
+	Showing the first {n} results.	Показани са първите {n} резултата.
+	Enter a word or phrase to search for.	Въведете дума или фраза за търсене.
+	Folder search is not available in this build.	Търсенето в папка не е налично в тази версия.
+	Choose a folder to search	Изберете папка за търсене
+	{path} is not a folder	{path} не е папка
+	Folder	Папка
+	Match Case (Alt+C)	Съвпадение на регистъра (Alt+C)
+	Match Whole Word (Alt+W)	Цяла дума (Alt+W)
+	Use Regular Expression (Alt+R)	Регулярен израз (Alt+R)

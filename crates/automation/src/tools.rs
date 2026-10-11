@@ -179,6 +179,18 @@ pub fn tools() -> Vec<ToolDef> {
                 "whole_words": { "type": "boolean" },
                 "regex": { "type": "boolean", "description": "Interpret query as a regular expression, with the find bar's rules." }
             }), &["doc", "query"])),
+        t("folder_find", "Find text in a folder", "Find a phrase in the PDF files in a folder. subfolders defaults to true. Case, whole words and regular expressions follow the find bar. An invalid pattern is an error. Unreadable, encrypted and oversized PDFs are skipped. Each hit has its path, 1-based page and a short snippet.")
+            .ro()
+            .cmd("edit.advanced_search")
+            .with(schema(json!({
+                "folder": { "type": "string", "description": "Folder to search. A relative path resolves inside the confinement root." },
+                "query": { "type": "string", "minLength": 1 },
+                "subfolders": { "type": "boolean", "description": "Search subfolders. Default true." },
+                "limit": { "type": "integer", "minimum": 1, "description": "Maximum matches (default 500)." },
+                "case_sensitive": { "type": "boolean" },
+                "whole_words": { "type": "boolean" },
+                "regex": { "type": "boolean", "description": "Interpret query as a regular expression, with the find bar's rules." }
+            }), &["folder", "query"])),
         t("page_rotate", "Rotate pages", "Rotate pages by a multiple of 90 degrees (positive is clockwise): the listed pages (default all), filtered like Acrobat's Rotate Pages by subset (all, even, odd page numbers) and orientation (all, landscape, portrait). Undoable.")
             .cmd("page.rotate")
             .with(schema(

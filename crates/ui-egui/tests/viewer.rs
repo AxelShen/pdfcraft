@@ -435,9 +435,12 @@ fn an_earlier_revision_opens_from_document_properties() {
 
 #[test]
 fn advanced_search_lists_results_with_context() {
+    use egui::accesskit::Role;
     let mut h = harness();
     let i = h.state().active.unwrap();
     assert!(h.state_mut().execute("edit.advanced_search"));
+    h.run_steps(2);
+    h.get_by_role_and_label(Role::RadioButton, "In the current document").click();
     h.run_steps(2);
     h.get_by_label("What word or phrase would you like to search for?");
     h.state_mut().views[i].find.as_mut().unwrap().query = "pages".into();
@@ -460,6 +463,77 @@ fn advanced_search_lists_results_with_context() {
     h.state_mut().right = None;
     h.run_steps(2);
     assert!(!h.state().views[i].find.as_ref().unwrap().in_panel);
+}
+
+#[test]
+fn folder_search_opens_a_hit_in_a_subfolder() {
+    let dir = std::env::temp_dir().join(format!("pdfcraft-ui-folder-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    let nested = dir.join("sub").join("nested.pdf");
+    std::fs::write(dir.join("top.pdf"), page_pdf("alpha top")).unwrap();
+    std::fs::write(&nested, page_pdf("alpha nested")).unwrap();
+
+    let mut h = harness();
+    assert!(h.state_mut().execute("file.close_all"));
+    h.run_steps(2);
+    assert!(h.state().views.is_empty(), "folder search has to open with no document");
+    assert!(h.state_mut().execute("edit.advanced_search"));
+    h.run_steps(2);
+    h.get_by_label("All PDF files in a folder");
+    h.state_mut().open_path(&nested.display().to_string());
+    h.run_steps(2);
+    let id = h.state().views[h.state().active.unwrap()].id;
+    h.state_mut().apply_edit(pdfcraft_engine::Edit::RotatePages { pages: vec![0], degrees: 90 });
+    assert!(h.state().session.get(id).unwrap().dirty);
+    {
+        let app = h.state_mut();
+        app.run_inline = true;
+        app.folder_search.folder = dir.display().to_string();
+        app.folder_search.query = "alpha".into();
+        app.folder_search.subfolders = true;
+    }
+    h.get_by_label("Search this folder").click();
+    h.run_steps(2);
+    h.get_by_label_contains("alpha nested").click();
+    h.run_steps(3);
+    let s = h.state();
+    assert_eq!(s.views.len(), 1, "the open tab is focused instead of reading the file again");
+    assert_eq!(s.views[0].id, id);
+    assert_eq!(s.views[0].current, 0);
+    let find = s.views[0].find.as_ref().unwrap();
+    assert_eq!(find.query, "alpha");
+    assert!(!find.in_panel);
+    let doc = s.session.get(id).unwrap();
+    assert!(doc.dirty, "unsaved rotation is still there");
+    assert_eq!(doc.info.pages[0].rotation, 90);
+    assert_eq!(doc.name, "nested.pdf");
+    assert_eq!(s.right, Some(pdfcraft_ui_egui::RightPanel::Search));
+}
+
+/// One page whose text is `text`.
+fn page_pdf(text: &str) -> Vec<u8> {
+    let body = format!("BT /F1 18 Tf 20 150 Td ({text}) Tj ET");
+    let objs = [
+        "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+        "<< /Type /Pages /Kids [4 0 R] /Count 1 /MediaBox [0 0 200 300] >>".to_string(),
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".to_string(),
+        "<< /Type /Page /Parent 2 0 R /Contents 5 0 R /Resources << /Font << /F1 3 0 R >> >> >>".to_string(),
+        format!("<< /Length {} >>\nstream\n{body}\nendstream", body.len()),
+    ];
+    let mut out = b"%PDF-1.7\n".to_vec();
+    let mut offsets = Vec::new();
+    for (i, obj) in objs.iter().enumerate() {
+        offsets.push(out.len());
+        out.extend_from_slice(format!("{} 0 obj\n{obj}\nendobj\n", i + 1).as_bytes());
+    }
+    let xref = out.len();
+    out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes());
+    for offset in offsets {
+        out.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
+    }
+    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out
 }
 
 #[test]

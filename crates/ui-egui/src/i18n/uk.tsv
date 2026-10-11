@@ -2217,3 +2217,20 @@ key	Space	Пробіл
 	Panels	Панелі
 	Resize panels	Змінити розмір панелей
 	Resize panel window	Змінити розмір вікна панелі
+	In the current document	У поточному документі
+	All PDF files in a folder	Усі файли PDF у папці
+	Search for words in the PDF files in this folder	Шукати слова в PDF-файлах цієї папки
+	Search this folder	Шукати в цій папці
+	Include subfolders	Включати вкладені папки
+	Searching… {s} of {t} files	Пошук… {s} із {t} файлів
+	{n} results in {f} files	{n} результатів у {f} файлах
+	{k} files could not be read.	Не вдалося прочитати файлів: {k}.
+	Showing the first {n} results.	Показано перші {n} результатів.
+	Enter a word or phrase to search for.	Введіть слово або фразу для пошуку.
+	Folder search is not available in this build.	Пошук у папці недоступний у цій збірці.
+	Choose a folder to search	Виберіть папку для пошуку
+	{path} is not a folder	{path} не є папкою
+	Folder	Папка
+	Match Case (Alt+C)	З урахуванням регістру (Alt+C)
+	Match Whole Word (Alt+W)	Ціле слово (Alt+W)
+	Use Regular Expression (Alt+R)	Регулярний вираз (Alt+R)

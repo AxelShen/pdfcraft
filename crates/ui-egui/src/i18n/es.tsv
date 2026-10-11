@@ -2112,3 +2112,20 @@ key	Space	Espacio
 	Resize panel window	Cambiar tamaño de la ventana del panel
 	Tools	Herramientas
 	Inspector	Inspector
+	In the current document	En el documento actual
+	All PDF files in a folder	Todos los archivos PDF de una carpeta
+	Search for words in the PDF files in this folder	Buscar palabras en los PDF de esta carpeta
+	Search this folder	Buscar en esta carpeta
+	Include subfolders	Incluir subcarpetas
+	Searching… {s} of {t} files	Buscando… {s} de {t} archivos
+	{n} results in {f} files	{n} resultados en {f} archivos
+	{k} files could not be read.	No se pudieron leer {k} archivos.
+	Showing the first {n} results.	Se muestran los primeros {n} resultados.
+	Enter a word or phrase to search for.	Escriba una palabra o frase para buscar.
+	Folder search is not available in this build.	La búsqueda en carpetas no está disponible en esta versión.
+	Choose a folder to search	Elegir una carpeta para buscar
+	{path} is not a folder	{path} no es una carpeta
+	Folder	Carpeta
+	Match Case (Alt+C)	Coincidir mayúsculas (Alt+C)
+	Match Whole Word (Alt+W)	Palabra completa (Alt+W)
+	Use Regular Expression (Alt+R)	Usar expresión regular (Alt+R)

@@ -388,6 +388,11 @@ pub(crate) enum Nav {
 }
 
 pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
+    // Folder search has to be reachable from Home, where no document is open.
+    if app.right == Some(RightPanel::Search) {
+        crate::search_ui::show(app, ui);
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     let Some((index, id)) = app.active_ids() else { return };
     let Some(panel) = app.right else { return };
@@ -587,7 +592,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     RightPanel::Accessibility => {
                         a11y_action = crate::a11y_ui::panel(ui, &t, a11y, id);
                     }
-                    RightPanel::Search => crate::search_ui::panel(ui, &t, view, info.pages.len()),
+                    RightPanel::Search => {}
                     RightPanel::Compare => compare_action = crate::compare_ui::panel(ui, &t, compare, id),
                     RightPanel::Attachments => {
                         if info.attachments.is_empty() {

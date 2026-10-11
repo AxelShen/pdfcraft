@@ -368,12 +368,9 @@ impl PdfCraftApp {
                 self.notify_tr("Click text or an image to edit it");
             }
             "edit.advanced_search" => {
-                if let Some(i) = self.active {
-                    let f = self.views[i].find.get_or_insert_with(Default::default);
-                    f.in_panel = true;
-                    f.focus = true;
-                    self.choose_right_panel(Some(crate::RightPanel::Search));
-                }
+                self.search_scope = crate::SearchScope::Folder;
+                self.folder_search.focus = true;
+                self.choose_right_panel(Some(crate::RightPanel::Search));
             }
             "a11y.report" => self.show_accessibility_report(),
             "a11y.alt_text" => self.start_alt_text(),

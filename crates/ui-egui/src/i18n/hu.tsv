@@ -2194,3 +2194,20 @@ key	Space	Szóköz
 	Resize panel window	Panelablak átméretezése
 	Tools	Eszközök
 	Inspector	Tulajdonságvizsgáló
+	In the current document	Az aktuális dokumentumban
+	All PDF files in a folder	Egy mappa összes PDF-fájlja
+	Search for words in the PDF files in this folder	Szavak keresése a mappa PDF-fájljaiban
+	Search this folder	Mappa keresése
+	Include subfolders	Almappákkal együtt
+	Searching… {s} of {t} files	Keresés… {s} / {t} fájl
+	{n} results in {f} files	{n} találat {f} fájlban
+	{k} files could not be read.	{k} fájlt nem sikerült olvasni.
+	Showing the first {n} results.	Az első {n} találat látható.
+	Enter a word or phrase to search for.	Írja be a keresett szót vagy kifejezést.
+	Folder search is not available in this build.	A mappában keresés ebben a változatban nem érhető el.
+	Choose a folder to search	Válassza ki a keresendő mappát
+	{path} is not a folder	{path} nem mappa
+	Folder	Mappa
+	Match Case (Alt+C)	Kis- és nagybetű (Alt+C)
+	Match Whole Word (Alt+W)	Egész szó (Alt+W)
+	Use Regular Expression (Alt+R)	Reguláris kifejezés (Alt+R)

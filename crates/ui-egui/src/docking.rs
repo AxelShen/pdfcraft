@@ -370,7 +370,7 @@ pub fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     style.font = crate::theme::medium(12.0);
     drain_reveals(&mut workspace, app);
     let mut rendered = workspace.layout.clone();
-    if app.active.is_none() && rendered.contains(&Panel::Inspector) {
+    if app.active.is_none() && rendered.contains(&Panel::Inspector) && app.right != Some(crate::RightPanel::Search) {
         // Availability is a render projection: the saved group, selection and width survive Home.
         let _ = rendered.apply(Action::Close { panel: Panel::Inspector });
     }

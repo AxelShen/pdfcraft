@@ -2196,3 +2196,20 @@ key	Space	Espace
 	Resize panel window	Redimensionner la fenêtre du panneau
 	Tools	Outils
 	Inspector	Inspecteur
+	In the current document	Dans le document actuel
+	All PDF files in a folder	Tous les fichiers PDF d'un dossier
+	Search for words in the PDF files in this folder	Rechercher des mots dans les PDF de ce dossier
+	Search this folder	Rechercher dans ce dossier
+	Include subfolders	Inclure les sous-dossiers
+	Searching… {s} of {t} files	Recherche… {s} fichiers sur {t}
+	{n} results in {f} files	{n} résultats dans {f} fichiers
+	{k} files could not be read.	{k} fichiers n'ont pas pu être lus.
+	Showing the first {n} results.	Affichage des {n} premiers résultats.
+	Enter a word or phrase to search for.	Saisissez un mot ou une expression à rechercher.
+	Folder search is not available in this build.	La recherche dans un dossier n'est pas disponible dans cette version.
+	Choose a folder to search	Choisir un dossier à rechercher
+	{path} is not a folder	{path} n'est pas un dossier
+	Folder	Dossier
+	Match Case (Alt+C)	Respecter la casse (Alt+C)
+	Match Whole Word (Alt+W)	Mot entier (Alt+W)
+	Use Regular Expression (Alt+R)	Utiliser une expression régulière (Alt+R)

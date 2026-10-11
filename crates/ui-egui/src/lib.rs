@@ -49,6 +49,7 @@ mod measure_ui;
 mod ocr_ui;
 mod optimize_ui;
 mod search_ui;
+pub use search_ui::{FolderSearch, SearchScope};
 mod sign_ui;
 mod stamps_ui;
 mod standards_ui;
@@ -508,6 +509,9 @@ pub struct PdfCraftApp {
     pub ocr_batch: Option<std::sync::Arc<std::sync::Mutex<ocr_ui::BatchProgress>>>,
     /// Background jobs (OCR, actions, listing pinned folders) run inline instead (tests).
     pub run_inline: bool,
+    /// Advanced Search: the open document, or every PDF in a folder.
+    pub search_scope: SearchScope,
+    pub folder_search: FolderSearch,
     /// Action Wizard: the user's actions, the dialog state, the running action and (tests) the
     /// files to use instead of a picker.
     pub custom_actions: Vec<pdfcraft_engine::actions::Action>,
@@ -780,6 +784,8 @@ impl PdfCraftApp {
             ocr_run: None,
             ocr_batch: None,
             run_inline: false,
+            search_scope: SearchScope::Document,
+            folder_search: FolderSearch::default(),
             custom_actions: Vec::new(),
             wizard: Default::default(),
             action_run: None,
@@ -1373,7 +1379,21 @@ impl PdfCraftApp {
         } else if panel.is_none() && self.right == Some(RightPanel::Comments) {
             self.comments_panel_closed = true;
         }
+        let opening_search = panel == Some(RightPanel::Search) && self.right != Some(RightPanel::Search);
         self.right = panel;
+        if opening_search {
+            // The query is the thing to type into. A later click still moves the cursor.
+            match self.search_scope {
+                SearchScope::Folder => self.folder_search.focus = true,
+                SearchScope::Document => {
+                    if let Some(i) = self.active {
+                        let find = self.views[i].find.get_or_insert_with(Default::default);
+                        find.in_panel = true;
+                        find.focus = true;
+                    }
+                }
+            }
+        }
         if panel.is_some() {
             self.pending_panel_reveals.push(docking::Panel::Inspector);
         }

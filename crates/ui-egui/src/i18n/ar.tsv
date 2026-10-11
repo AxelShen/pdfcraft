@@ -2216,3 +2216,20 @@ key	Space	مسافة
 	Panels	اللوحات
 	Resize panels	تغيير حجم اللوحات
 	Resize panel window	تغيير حجم نافذة اللوحة
+	In the current document	في المستند الحالي
+	All PDF files in a folder	كل ملفات PDF في مجلد
+	Search for words in the PDF files in this folder	ابحث عن كلمات في ملفات PDF في هذا المجلد
+	Search this folder	ابحث في هذا المجلد
+	Include subfolders	تضمين المجلدات الفرعية
+	Searching… {s} of {t} files	جارٍ البحث… {s} من {t} ملفات
+	{n} results in {f} files	{n} نتائج في {f} ملفات
+	{k} files could not be read.	تعذر قراءة {k} ملفات.
+	Showing the first {n} results.	يتم عرض أول {n} نتائج.
+	Enter a word or phrase to search for.	أدخل كلمة أو عبارة للبحث عنها.
+	Folder search is not available in this build.	البحث في مجلد غير متاح في هذا الإصدار.
+	Choose a folder to search	اختر مجلدًا للبحث
+	{path} is not a folder	{path} ليس مجلدًا
+	Folder	مجلد
+	Match Case (Alt+C)	مطابقة حالة الأحرف (Alt+C)
+	Match Whole Word (Alt+W)	كلمة كاملة (Alt+W)
+	Use Regular Expression (Alt+R)	استخدام تعبير نمطي (Alt+R)

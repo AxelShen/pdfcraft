@@ -2126,3 +2126,20 @@ key	Space	స్పేస్
 	Resize panel window	ప్యానెల్ విండో పరిమాణం మార్చు
 	Tools	సాధనాలు
 	Inspector	పరిశీలకుడు
+	In the current document	ప్రస్తుత పత్రంలో
+	All PDF files in a folder	ఫోల్డర్‌లోని అన్ని PDF ఫైళ్లు
+	Search for words in the PDF files in this folder	ఈ ఫోల్డర్‌లోని PDF ఫైళ్లలో పదాలను వెతకండి
+	Search this folder	ఈ ఫోల్డర్‌ను శోధించండి
+	Include subfolders	ఉపఫోల్డర్‌లను చేర్చు
+	Searching… {s} of {t} files	వెతుకుతోంది… {t} ఫైళ్లలో {s}
+	{n} results in {f} files	{f} ఫైళ్లలో {n} ఫలితాలు
+	{k} files could not be read.	{k} ఫైళ్లను చదవలేకపోయాం.
+	Showing the first {n} results.	మొదటి {n} ఫలితాలు చూపిస్తున్నాం.
+	Enter a word or phrase to search for.	వెతకాల్సిన పదం లేదా పదబంధాన్ని నమోదు చేయండి.
+	Folder search is not available in this build.	ఈ బిల్డ్‌లో ఫోల్డర్ శోధన అందుబాటులో లేదు.
+	Choose a folder to search	శోధించాల్సిన ఫోల్డర్‌ను ఎంచుకోండి
+	{path} is not a folder	{path} ఫోల్డర్ కాదు
+	Folder	ఫోల్డర్
+	Match Case (Alt+C)	అక్షరాల పెద్దచిన్నను సరిపోల్చు (Alt+C)
+	Match Whole Word (Alt+W)	పూర్తి పదం (Alt+W)
+	Use Regular Expression (Alt+R)	రెగ్యులర్ ఎక్స్‌ప్రెషన్ (Alt+R)

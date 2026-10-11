@@ -182,3 +182,20 @@ key	Space	Mezerník
 	Resize panel window	Změnit velikost okna panelu
 	Tools	Nástroje
 	Inspector	Inspektor
+	In the current document	V aktuálním dokumentu
+	All PDF files in a folder	Všechny soubory PDF ve složce
+	Search for words in the PDF files in this folder	Hledat slova v PDF v této složce
+	Search this folder	Prohledat tuto složku
+	Include subfolders	Zahrnout podsložky
+	Searching… {s} of {t} files	Hledání… {s} z {t} souborů
+	{n} results in {f} files	{n} výsledků v {f} souborech
+	{k} files could not be read.	{k} souborů se nepodařilo přečíst.
+	Showing the first {n} results.	Zobrazeno prvních {n} výsledků.
+	Enter a word or phrase to search for.	Zadejte slovo nebo frázi k vyhledání.
+	Folder search is not available in this build.	Hledání ve složce není v tomto sestavení k dispozici.
+	Choose a folder to search	Vyberte složku k prohledání
+	{path} is not a folder	{path} není složka
+	Folder	Složka
+	Match Case (Alt+C)	Rozlišovat velikost písmen (Alt+C)
+	Match Whole Word (Alt+W)	Celé slovo (Alt+W)
+	Use Regular Expression (Alt+R)	Použít regulární výraz (Alt+R)

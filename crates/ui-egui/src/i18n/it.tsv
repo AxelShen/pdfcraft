@@ -2203,3 +2203,20 @@ key	Space	Spazio
 	Panels	Pannelli
 	Resize panels	Ridimensiona pannelli
 	Resize panel window	Ridimensiona finestra pannello
+	In the current document	Nel documento corrente
+	All PDF files in a folder	Tutti i file PDF in una cartella
+	Search for words in the PDF files in this folder	Cerca parole nei PDF di questa cartella
+	Search this folder	Cerca in questa cartella
+	Include subfolders	Includi le sottocartelle
+	Searching… {s} of {t} files	Ricerca… {s} di {t} file
+	{n} results in {f} files	{n} risultati in {f} file
+	{k} files could not be read.	Impossibile leggere {k} file.
+	Showing the first {n} results.	Sono mostrati i primi {n} risultati.
+	Enter a word or phrase to search for.	Immettere una parola o una frase da cercare.
+	Folder search is not available in this build.	La ricerca nelle cartelle non è disponibile in questa versione.
+	Choose a folder to search	Scegli una cartella in cui cercare
+	{path} is not a folder	{path} non è una cartella
+	Folder	Cartella
+	Match Case (Alt+C)	Maiuscole/minuscole (Alt+C)
+	Match Whole Word (Alt+W)	Parola intera (Alt+W)
+	Use Regular Expression (Alt+R)	Usa espressione regolare (Alt+R)

@@ -3056,7 +3056,7 @@ pub(crate) fn find_toggles(ui: &mut egui::Ui, find: &mut Find) -> bool {
 pub(crate) fn consume_find_option_keys(ui: &egui::Ui, find: &mut Find) -> bool {
     let focused = ui.memory(|m| {
         let id = m.focused();
-        id == Some(egui::Id::new("find-input")) || id == Some(egui::Id::new("search-panel-input"))
+        id == Some(egui::Id::new("find-input")) || id == Some(egui::Id::new("search-panel-input")) || id == Some(egui::Id::new("folder-search-input"))
     });
     if !focused {
         return false;
