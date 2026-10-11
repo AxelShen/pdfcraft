@@ -1575,6 +1575,7 @@ impl Automation {
                 regex: a.opt_bool("regex")?.unwrap_or(false),
             },
             limit,
+            cancel: None,
         };
         let report = pdfcraft_engine::folder_find::search(&folder, &query, |_, _| true).map_err(failed)?;
         let hits: Vec<Value> = report

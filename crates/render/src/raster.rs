@@ -9,9 +9,7 @@
 //! rebuild loop, and a timed-out shared initialization is never started again in that pool.
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
-#[cfg(not(target_arch = "wasm32"))]
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::SyncSender;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::mpsc::{Receiver, sync_channel};
@@ -61,6 +59,9 @@ pub struct RenderConfig {
     /// Refuse a whole-page raster that would be reduced by the renderer's hard size caps.
     /// Tiled requests remain available for pages that exceed those caps.
     pub reject_oversize: bool,
+    /// Stop interpretation before the next operator once this is set. A folder search uses it
+    /// so one damaged or enormous page cannot hold the search forever.
+    pub cancelled: Option<Arc<AtomicBool>>,
 }
 
 impl RenderConfig {
@@ -70,6 +71,7 @@ impl RenderConfig {
             ocg_overrides: self.layers.clone(),
             hide_comments: self.hide_comments,
             font_resolver: Arc::new(move |query| japanese_fallback(query).or_else(|| standard(query))),
+            cancelled: self.cancelled.clone(),
             ..InterpreterSettings::default()
         }
     }

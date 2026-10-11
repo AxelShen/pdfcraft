@@ -2213,3 +2213,4 @@ key	Space	スペース
 	Match Case (Alt+C)	大文字と小文字を区別 (Alt+C)
 	Match Whole Word (Alt+W)	単語単位で一致 (Alt+W)
 	Use Regular Expression (Alt+R)	正規表現を使う (Alt+R)
+	Searching…	検索中…

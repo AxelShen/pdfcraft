@@ -5,7 +5,9 @@
 //! that file.
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use egui::text::LayoutJob;
 use egui::{Color32, FontId, TextFormat};
@@ -63,6 +65,9 @@ impl Default for FolderSearch {
 struct FolderProgress {
     scanned: usize,
     total: usize,
+    page: u32,
+    pages: u32,
+    current: String,
     hits: Vec<Hit>,
     files: usize,
     skipped: usize,
@@ -70,6 +75,7 @@ struct FolderProgress {
     error: Option<String>,
     done: bool,
     cancel: bool,
+    abort: Option<Arc<AtomicBool>>,
 }
 
 /// The Search side panel, including its frame. Works with no document open.
@@ -111,7 +117,7 @@ pub(crate) fn show(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui) {
     }
     let running = app.folder_search.job.as_ref().is_some_and(|job| job.lock().map(|g| !g.done).unwrap_or(false));
     if running {
-        ui.ctx().request_repaint();
+        ui.ctx().request_repaint_after(Duration::from_millis(100));
     }
 }
 
@@ -282,9 +288,8 @@ fn folder_body(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
     if running {
         if crate::widgets::pill_button(ui, tl!("Cancel"), false).clicked()
             && let Some(job) = &app.folder_search.job
-            && let Ok(mut guard) = job.lock()
         {
-            guard.cancel = true;
+            stop_job(job);
         }
     } else if crate::widgets::pill_button(ui, tl!("Search this folder"), true).clicked() {
         start_folder_search(app);
@@ -298,21 +303,31 @@ fn folder_body(app: &mut crate::PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         ui.label(egui::RichText::new(err).color(error_color(t)));
         return;
     }
-    if !progress.done {
-        let shown = progress.scanned.saturating_add(1).min(progress.total.max(1));
+    if progress.done {
+        let n = progress.hits.len().to_string();
+        let files = progress.files.to_string();
+        ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{n} results in {f} files"), &[("n", &n), ("f", &files)])).font(theme::semibold(12.5)));
+        if progress.skipped > 0 {
+            let k = progress.skipped.to_string();
+            ui.label(crate::i18n::fmt(tl!("{k} files could not be read."), &[("k", &k)]));
+        }
+        if progress.truncated {
+            ui.label(crate::i18n::fmt(tl!("Showing the first {n} results."), &[("n", &n)]));
+        }
+    } else if progress.total == 0 {
+        ui.label(egui::RichText::new(tl!("Searching…")).font(theme::semibold(12.5)));
+    } else {
+        let shown = progress.scanned.saturating_add(1).min(progress.total);
         let status = crate::i18n::fmt(tl!("Searching… {s} of {t} files"), &[("s", &shown.to_string()), ("t", &progress.total.to_string())]);
         ui.label(egui::RichText::new(status).font(theme::semibold(12.5)));
-        return;
-    }
-    let n = progress.hits.len().to_string();
-    let files = progress.files.to_string();
-    ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{n} results in {f} files"), &[("n", &n), ("f", &files)])).font(theme::semibold(12.5)));
-    if progress.skipped > 0 {
-        let k = progress.skipped.to_string();
-        ui.label(crate::i18n::fmt(tl!("{k} files could not be read."), &[("k", &k)]));
-    }
-    if progress.truncated {
-        ui.label(crate::i18n::fmt(tl!("Showing the first {n} results."), &[("n", &n)]));
+        if progress.pages > 0 {
+            let pages =
+                crate::i18n::fmt(tl!("Searching… {s} of {p} pages"), &[("s", &progress.page.to_string()), ("p", &progress.pages.to_string())]);
+            ui.label(egui::RichText::new(pages).color(t.text_muted));
+        }
+        if !progress.current.is_empty() {
+            ui.label(egui::RichText::new(&progress.current).small().color(t.text_muted));
+        }
     }
     ui.add_space(4.0);
     let mut last: Option<PathBuf> = None;
@@ -363,11 +378,10 @@ fn start_folder_search(app: &mut crate::PdfCraftApp) {
         app.folder_search.job = None;
         return;
     }
-    if let Some(job) = &app.folder_search.job
-        && let Ok(mut guard) = job.lock()
-    {
-        guard.cancel = true;
+    if let Some(job) = &app.folder_search.job {
+        stop_job(job);
     }
+    let abort = Arc::new(AtomicBool::new(false));
     let query = folder_find::Query {
         text,
         subfolders: app.folder_search.subfolders,
@@ -377,17 +391,24 @@ fn start_folder_search(app: &mut crate::PdfCraftApp) {
             regex: app.folder_search.regex,
         },
         limit: folder_find::MAX_MATCHES,
+        cancel: Some(Arc::clone(&abort)),
     };
     let folder = PathBuf::from(app.folder_search.folder.trim());
-    let progress = Arc::new(Mutex::new(FolderProgress::default()));
+    let progress = Arc::new(Mutex::new(FolderProgress { abort: Some(abort), ..FolderProgress::default() }));
     let shared = progress.clone();
     let lang = crate::i18n::current();
     let work = move || {
         crate::i18n::set_current(lang);
-        let report = folder_find::search(&folder, &query, |scanned, total| {
+        let report = folder_find::search(&folder, &query, |state, hits| {
             let Ok(mut guard) = shared.lock() else { return false };
-            guard.scanned = scanned;
-            guard.total = total;
+            guard.scanned = state.files_done;
+            guard.total = state.files_total;
+            guard.page = state.page;
+            guard.pages = state.pages;
+            guard.current = state.path.as_ref().and_then(|path| path.file_name()).map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
+            if guard.hits.len() != hits.len() {
+                guard.hits = hits.to_vec();
+            }
             !guard.cancel
         });
         if let Ok(mut guard) = shared.lock() {
@@ -419,6 +440,15 @@ fn start_folder_search(app: &mut crate::PdfCraftApp) {
     #[cfg(target_arch = "wasm32")]
     work();
     app.folder_search.job = Some(progress);
+}
+
+fn stop_job(job: &Mutex<FolderProgress>) {
+    if let Ok(mut guard) = job.lock() {
+        guard.cancel = true;
+        if let Some(flag) = &guard.abort {
+            flag.store(true, Ordering::Release);
+        }
+    }
 }
 
 fn explain(err: &folder_find::Error) -> String {
