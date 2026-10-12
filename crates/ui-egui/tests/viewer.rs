@@ -511,6 +511,80 @@ fn folder_search_opens_a_hit_in_a_subfolder() {
     assert_eq!(s.right, Some(pdfcraft_ui_egui::RightPanel::Search));
 }
 
+#[test]
+fn folder_search_opens_the_clicked_match() {
+    let dir = std::env::temp_dir().join(format!("pdfcraft-ui-folder-hit-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    // Page 1 has a match that must not steal the click. Page 2 has two, far enough apart that
+    // each snippet names only one of them. The second sits lower on the page.
+    let early = "BT /F1 18 Tf 20 150 Td (alpha early) Tj ET";
+    let later = "BT /F1 12 Tf 20 280 Td (alpha one) Tj 0 -20 Td (xxxx xxxx xxxx xxxx xxxx ) Tj 0 -120 Td (alpha two) Tj ET";
+    std::fs::write(dir.join("marks.pdf"), pages_pdf(&[early, later])).unwrap();
+
+    let mut h = harness();
+    assert!(h.state_mut().execute("file.close_all"));
+    h.run_steps(2);
+    assert!(h.state_mut().execute("edit.advanced_search"));
+    h.run_steps(2);
+    {
+        let app = h.state_mut();
+        app.run_inline = true;
+        app.folder_search.folder = dir.display().to_string();
+        app.folder_search.query = "alpha".into();
+        app.folder_search.subfolders = true;
+    }
+    h.get_by_label("Search this folder").click();
+    h.run_steps(2);
+    h.get_by_label_contains("alpha two").click();
+    for _ in 0..40 {
+        h.run_steps(2);
+        let ready = h.state().views.first().is_some_and(|view| {
+            !view.render_pending()
+                && view.find.as_ref().is_some_and(|find| find.matches.iter().filter(|(page, _)| *page == 1).count() >= 2 && find.current.is_some())
+        });
+        if ready {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let view = &h.state().views[0];
+    assert_eq!(view.current, 1, "the click opens page 2, not an earlier page that also matches");
+    let find = view.find.as_ref().unwrap();
+    assert!(!find.in_panel);
+    let on_page: Vec<usize> = find.matches.iter().filter(|(page, _)| *page == 1).map(|(_, range)| range.start).collect();
+    assert_eq!(on_page.len(), 2, "{:?}", find.matches);
+    let current = find.current.expect("the clicked match is selected");
+    assert_eq!(find.matches[current].0, 1);
+    assert_eq!(find.matches[current].1.start, *on_page.iter().max().expect("page 2 has a match"));
+}
+
+/// One page per content stream. Each entry is the page's content operators.
+fn pages_pdf(bodies: &[&str]) -> Vec<u8> {
+    let n = bodies.len();
+    let mut objs: Vec<String> = vec!["<< /Type /Catalog /Pages 2 0 R >>".into()];
+    let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 4 + 2 * i)).collect();
+    objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>", kids.join(" ")));
+    objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into());
+    for (i, body) in bodies.iter().enumerate() {
+        objs.push(format!("<< /Type /Page /Parent 2 0 R /Contents {} 0 R /Resources << /Font << /F1 3 0 R >> >> >>", 5 + 2 * i));
+        objs.push(format!("<< /Length {} >>\nstream\n{body}\nendstream", body.len()));
+    }
+    let mut out = b"%PDF-1.7\n".to_vec();
+    let mut offs = Vec::new();
+    for (i, obj) in objs.iter().enumerate() {
+        offs.push(out.len());
+        out.extend_from_slice(format!("{} 0 obj\n{obj}\nendobj\n", i + 1).as_bytes());
+    }
+    let xref = out.len();
+    out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes());
+    for offset in offs {
+        out.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
+    }
+    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out
+}
+
 /// One page whose text is `text`.
 fn page_pdf(text: &str) -> Vec<u8> {
     let body = format!("BT /F1 18 Tf 20 150 Td ({text}) Tj ET");

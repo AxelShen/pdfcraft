@@ -502,7 +502,8 @@ fn open_hit(app: &mut crate::PdfCraftApp, hit: &Hit) {
         find.regex = regex;
         find.in_panel = false;
         find.focus = false;
-        view.rerun_find();
+        let glyph = hit.glyph;
+        view.show_match(page, glyph);
     }
 }
 

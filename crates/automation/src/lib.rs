@@ -1582,7 +1582,7 @@ impl Automation {
             .hits
             .iter()
             .filter(|hit| self.inside_root(&hit.path))
-            .map(|hit| json!({ "path": hit.path.display().to_string(), "page": hit.page, "snippet": hit.snippet }))
+            .map(|hit| json!({ "path": hit.path.display().to_string(), "page": hit.page, "glyph": hit.glyph, "snippet": hit.snippet }))
             .collect();
         Ok(json!({
             "query": text,

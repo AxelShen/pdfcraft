@@ -198,6 +198,9 @@ pub struct Find {
     pub regex_error: Option<String>,
     /// Shown in the Search panel (Advanced Search) instead of the find bar.
     pub in_panel: bool,
+    /// Folder search asked to show this match (page, glyph index) once that page's text is known.
+    /// Text from another page must not move the caret while this is set.
+    pub focus_at: Option<(usize, usize)>,
 }
 
 impl Find {
@@ -764,6 +767,21 @@ impl DocView {
 
     /// Re-run the search on all pages whose text is known (after the query changed).
     pub fn rerun_find(&mut self) {
+        if let Some(f) = self.find.as_mut() {
+            f.focus_at = None;
+        }
+        self.rerun_find_inner();
+    }
+
+    /// Re-run the search and, once `page`'s text is known, show the match that starts at `glyph`.
+    pub fn show_match(&mut self, page: usize, glyph: usize) {
+        if let Some(f) = self.find.as_mut() {
+            f.focus_at = Some((page, glyph));
+        }
+        self.rerun_find_inner();
+    }
+
+    fn rerun_find_inner(&mut self) {
         let Some(f) = self.find.as_mut() else { return };
         f.case_query = f.query.clone();
         f.matches.clear();
@@ -794,6 +812,10 @@ impl DocView {
         f.matches.retain(|(p, _)| *p != page);
         f.matches.extend(ranges.into_iter().map(|r| (page, r)));
         f.matches.sort_by_key(|(p, r)| (*p, r.start));
+        if self.settle_focus(page, current_key.clone()) {
+            return;
+        }
+        let Some(f) = self.find.as_mut() else { return };
         f.current = match current_key {
             Some(k) => f.matches.iter().position(|m| *m == k),
             None => None,
@@ -806,6 +828,36 @@ impl DocView {
             let (p, _) = f.matches[i];
             self.flash_match(p);
         }
+    }
+
+    /// `true` when a folder-search click still owns the caret, so another page must not scroll
+    /// the view to its own first match.
+    fn settle_focus(&mut self, page: usize, current_key: Option<(usize, Range<usize>)>) -> bool {
+        let Some((target, glyph)) = self.find.as_ref().and_then(|f| f.focus_at) else { return false };
+        let found = self.find.as_ref().and_then(|f| f.matches.iter().position(|(p, r)| *p == target && r.start == glyph));
+        if let Some(i) = found {
+            if let Some(f) = self.find.as_mut() {
+                f.current = Some(i);
+                f.focus_at = None;
+            }
+            self.flash_match(target);
+            return true;
+        }
+        if page == target {
+            let fallback = self.find.as_ref().and_then(|f| f.matches.iter().position(|(p, _)| *p == target));
+            if let Some(f) = self.find.as_mut() {
+                f.focus_at = None;
+                f.current = fallback;
+            }
+            if fallback.is_some() {
+                self.flash_match(target);
+            }
+            return true;
+        }
+        if let Some(f) = self.find.as_mut() {
+            f.current = current_key.and_then(|k| f.matches.iter().position(|m| *m == k));
+        }
+        true
     }
 
     /// Go to match `i` (the Search panel's results).

@@ -73,11 +73,14 @@ pub struct Progress {
     pub pages: u32,
 }
 
-/// One match. `page` is 1-based.
+/// One match. `page` is 1-based. `glyph` is the match start in that page's glyph list, the same
+/// index [`PageText::search`](pdfcraft_render::text::PageText::search) returns, so a click can
+/// show this match and not the first one on the page.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hit {
     pub path: PathBuf,
     pub page: u32,
+    pub glyph: usize,
     pub snippet: String,
 }
 
@@ -314,7 +317,8 @@ fn push_hits(path: &Path, page: usize, text: &PageText, scan: &Scan<'_>, report:
             report.truncated = true;
             return Ok(true);
         }
-        report.hits.push(Hit { path: path.to_path_buf(), page: page_no, snippet: snippet(text, range) });
+        let glyph = range.start;
+        report.hits.push(Hit { path: path.to_path_buf(), page: page_no, glyph, snippet: snippet(text, range) });
     }
     if report.hits.len() >= scan.limit {
         report.truncated = true;
@@ -618,5 +622,16 @@ mod tests {
         })
         .unwrap();
         assert!(cancelled.cancelled && cancelled.hits.is_empty() && calls == 1, "{cancelled:?} calls {calls}");
+    }
+
+    #[test]
+    fn a_hit_records_which_glyph_matched() {
+        let dir = temp_dir("glyph");
+        std::fs::write(dir.join("a.pdf"), one_page("alpha one alpha two")).unwrap();
+        let found = search(&dir, &query("alpha"), |_, _| true).unwrap();
+        assert_eq!(found.hits.len(), 2, "{found:?}");
+        assert!(found.hits.iter().all(|hit| hit.page == 1));
+        assert!(found.hits[0].glyph < found.hits[1].glyph, "the later match is a later glyph: {found:?}");
+        assert!(found.hits[1].snippet.contains("two"), "{}", found.hits[1].snippet);
     }
 }

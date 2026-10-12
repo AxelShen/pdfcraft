@@ -1430,8 +1430,8 @@ milestone = "M12"
 status = "shipped"
 commands = ["edit.advanced_search"]
 tools = ["folder_find"]
-evidence = ["crates/engine/src/folder_find.rs::finds_pdfs_in_a_folder_and_its_subfolders", "crates/automation/tests/automation.rs::folder_find_searches_pdfs_under_a_folder", "crates/ui-egui/tests/viewer.rs::folder_search_opens_a_hit_in_a_subfolder"]
-notes = "Ctrl+Shift+F opens Search on all PDF files in a folder, including subfolders unless that is turned off. Case, whole word and regular expression follow Find. A result opens that PDF on the matching page and keeps unsaved edits in a tab that already shows the file. Unreadable, encrypted, oversized and symlinked files are skipped. Other open documents, bookmarks, comments and catalog indexes are still to come."
+evidence = ["crates/engine/src/folder_find.rs::finds_pdfs_in_a_folder_and_its_subfolders", "crates/engine/src/folder_find.rs::a_hit_records_which_glyph_matched", "crates/automation/tests/automation.rs::folder_find_searches_pdfs_under_a_folder", "crates/ui-egui/tests/viewer.rs::folder_search_opens_a_hit_in_a_subfolder", "crates/ui-egui/tests/viewer.rs::folder_search_opens_the_clicked_match"]
+notes = "Ctrl+Shift+F opens Search on all PDF files in a folder, including subfolders unless that is turned off. Case, whole word and regular expression follow Find. A result opens that PDF on the clicked match, not the first match on the page, and keeps unsaved edits in a tab that already shows the file. Unreadable, encrypted, oversized and symlinked files are skipped. Other open documents, bookmarks, comments and catalog indexes are still to come."
 
 [[feature]]
 id = "view.search-boolean"
